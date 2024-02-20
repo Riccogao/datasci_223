@@ -1,0 +1,67 @@
+Summary of the entire workflow
+
+1. Model Selection
+For model selection, I considered two candidate models: 
+Support Vector Machine (SVM) and Multi-Layer Perceptron (MLP). 
+SVM (Support Vector Machine) is good for binary classification and can be extended to support multiclass classification. 
+On the other hand, MLP (Multi-Layer Perceptron) is a type of neural network that can capture complex patterns through its layers.
+
+However, due to the unexpected failure (waiting forever) of the model tuning by using GridSearchCV and RandomizedSearchCV.
+Those two models were not worked out, provide the code below:
+
+from sklearn.svm import SVC 
+from sklearn.neural_network import MLPClassifier
+#Define the candidate models and their hyperparameters
+
+#SVM (Support Vector Machine) model
+svm_model = SVC()
+svm_params = {
+    'C': [0.1, 1, 10],
+    'kernel': ['rbf', 'linear']
+}
+#MLP (Multi-Layer Perceptron) model 
+mlp_model = MLPClassifier(max_iter=100)
+mlp_params = {
+    'hidden_layer_sizes': [(50,), (100,)],
+    'activation': ['tanh', 'relu'],
+}
+from sklearn.model_selection import StratifiedKFold, GridSearchCV
+# Using StratifiedKFold for preserving the percentage of samples for each class
+k_folds = 3
+kf = StratifiedKFold(n_splits=k_folds, shuffle=True, random_state=42)
+
+models_params = {'SVM': svm_model, 'SVM_params': svm_params, 'MLP': mlp_model, 'MLP_params': mlp_params}
+
+# Perform GridSearchCV for hyperparameter tuning
+for name, mp in models_params.items():
+    clf = GridSearchCV(mp, models_params[name + '_params'], cv=kf, scoring='accuracy')
+    clf.fit(X_train_test, y_train_test)
+    print(f"Best parameters for {name}: {clf.best_params_}")
+
+2. Training and Evaluation with XGBoost:
+The outcome of the performance Metrics for xgboost is:
+	accuracy	precision	recall	f1
+	0.974855	0.970211	0.952391	0.960876
+However, the confusion matrix has been encountered define issue.
+
+3. Retraining on Combined Dataset
+Since only one model has been discussed, there is no best model selected to go through the comparison,
+and evaluated the retrained model's performance on a hold-out validation set.
+
+4. Encountered Errors and Corrections
+AttributeError:
+I was attempting to call .tolist() on a list object X_train_test, which is a list of flattened images.
+Incorrect arguments passed to evaluation metrics functions, leading to TypeError. 
+For instance, using average='macro' with accuracy_score, which does not accept an average parameter.
+
+Using the same data for training and validation.
+
+TypeError: too many positional arguments
+Issue: This error occurred when calling the accuracy_score, precision_score, recall_score, and f1_score functions with an incorrect number of arguments.
+
+ValueError: Shape of passed values is (7, 7), indices imply (2, 2)
+This error occurred when attempting to create a DataFrame from a confusion matrix with mismatched dimensions.
+
+when fitting the XGBoost model with a combined dataset, 
+there is a mismatch between the expected classes and the classes present in the combined dataset.(y_combined_encoded)
+not sure the target variable (y) should transformed from its original form into a numerical format.
